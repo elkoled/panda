@@ -3,7 +3,8 @@
 #define PSA_LANE_KEEP_ASSIST     1010
 // Messages on the ADAS bus.
 #define PSA_HS2_DYN_ABR_38D      909
-#define PSA_HS2_BGE_DYN5_CMM_228 552
+// # TODO message not in route
+//#define PSA_HS2_BGE_DYN5_CMM_228 552
 #define PSA_HS2_DAT_MDD_CMD_452  1106
 
 // CAN bus numbers.
@@ -19,7 +20,7 @@ RxCheck psa_rx_checks[] = {
   // TODO: counters and checksums
   {.msg = {{PSA_DAT_BSI, PSA_MAIN_BUS, 8, .frequency = 20U}, { 0 }, { 0 }}},
   {.msg = {{PSA_HS2_DYN_ABR_38D, PSA_ADAS_BUS, 8, .frequency = 25U}, { 0 }, { 0 }}},
-  {.msg = {{PSA_HS2_BGE_DYN5_CMM_228, PSA_ADAS_BUS, 8, .frequency = 100U}, { 0 }, { 0 }}},
+  //{.msg = {{PSA_HS2_BGE_DYN5_CMM_228, PSA_ADAS_BUS, 8, .frequency = 100U}, { 0 }, { 0 }}},
   {.msg = {{PSA_HS2_DAT_MDD_CMD_452, PSA_ADAS_BUS, 6, .frequency = 20U}, { 0 }, { 0 }}},
 };
 
@@ -64,11 +65,12 @@ static void psa_rx_hook(const CANPacket_t *to_push) {
       UPDATE_VEHICLE_SPEED(speed * 0.01);
     }
 
-    // Update gas pedal
-    if (addr == PSA_HS2_BGE_DYN5_CMM_228) {
-      // Signal: EFCMNT_PDLE_ACCEL
-      gas_pressed = GET_BYTE(to_push, 2) > 0U;
-    }
+    //TODO: message not in route, replace with correct message
+    // // Update gas pedal
+    // if (addr == PSA_HS2_BGE_DYN5_CMM_228) {
+    //   // Signal: EFCMNT_PDLE_ACCEL
+    //   gas_pressed = GET_BYTE(to_push, 2) > 0U;
+    // }
 
     // Update cruise state
     if (addr == PSA_HS2_DAT_MDD_CMD_452) {
