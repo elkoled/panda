@@ -1,4 +1,5 @@
 // Safety-relevant CAN messages for PSA vehicles.
+#define PSA_DRIVER               1390
 #define PSA_DAT_BSI              1042
 #define PSA_LANE_KEEP_ASSIST     1010
 // Messages on the ADAS bus.
@@ -18,6 +19,7 @@ const CanMsg PSA_TX_MSGS[] = {
 
 RxCheck psa_rx_checks[] = {
   // TODO: counters and checksums
+  {.msg = {{PSA_DRIVER, PSA_MAIN_BUS, 6, .frequency = 10U}, { 0 }, { 0 }}},
   {.msg = {{PSA_DAT_BSI, PSA_MAIN_BUS, 8, .frequency = 20U}, { 0 }, { 0 }}},
   {.msg = {{PSA_HS2_DYN_ABR_38D, PSA_ADAS_BUS, 8, .frequency = 25U}, { 0 }, { 0 }}},
   //{.msg = {{PSA_HS2_BGE_DYN5_CMM_228, PSA_ADAS_BUS, 8, .frequency = 100U}, { 0 }, { 0 }}},
@@ -65,12 +67,11 @@ static void psa_rx_hook(const CANPacket_t *to_push) {
       UPDATE_VEHICLE_SPEED(speed * 0.01);
     }
 
-    //TODO: message not in route, replace with correct message
-    // // Update gas pedal
-    // if (addr == PSA_HS2_BGE_DYN5_CMM_228) {
-    //   // Signal: EFCMNT_PDLE_ACCEL
-    //   gas_pressed = GET_BYTE(to_push, 2) > 0U;
-    // }
+    // Update gas pedal
+    if (addr == PSA_DRIVER) {
+      // Signal: GAS_PEDAL
+      gas_pressed = GET_BYTE(to_push, 3) > 0U;
+    }
 
     // Update cruise state
     if (addr == PSA_HS2_DAT_MDD_CMD_452) {
