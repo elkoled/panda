@@ -19,8 +19,8 @@ const CanMsg PSA_TX_MSGS[] = {
 
 RxCheck psa_rx_checks[] = {
   // TODO: counters and checksums
-  {.msg = {{PSA_DRIVER, PSA_MAIN_BUS, 6, .frequency = 10U}, { 0 }, { 0 }}},
-  {.msg = {{PSA_DAT_BSI, PSA_MAIN_BUS, 8, .frequency = 20U}, { 0 }, { 0 }}},
+  {.msg = {{PSA_DRIVER, PSA_CAM_BUS, 6, .frequency = 10U}, { 0 }, { 0 }}},
+  {.msg = {{PSA_DAT_BSI, PSA_CAM_BUS, 8, .frequency = 20U}, { 0 }, { 0 }}},
   {.msg = {{PSA_HS2_DYN_ABR_38D, PSA_ADAS_BUS, 8, .frequency = 25U}, { 0 }, { 0 }}},
   //{.msg = {{PSA_HS2_BGE_DYN5_CMM_228, PSA_ADAS_BUS, 8, .frequency = 100U}, { 0 }, { 0 }}},
   {.msg = {{PSA_HS2_DAT_MDD_CMD_452, PSA_ADAS_BUS, 6, .frequency = 20U}, { 0 }, { 0 }}},
@@ -108,18 +108,18 @@ static int psa_fwd_hook(int bus_num, int addr) {
   int bus_fwd = -1;
   switch (bus_num) {
     case PSA_MAIN_BUS: {
-      // Forward all traffic from MAIN to CAM
-      bus_fwd = PSA_CAM_BUS;
-      break;
-    }
-    case PSA_CAM_BUS: {
       if (psa_lkas_msg_check(addr)) {
         // Block stock LKAS messages
         bus_fwd = -1;
       } else {
-        // Forward all other traffic from CAM to MAIN
-        bus_fwd = PSA_MAIN_BUS;
+        // Forward all other traffic from MAIN to CAM
+        bus_fwd = PSA_CAM_BUS;
       }
+      break;
+    }
+    case PSA_CAM_BUS: {
+      // Forward all traffic from CAM to MAIN
+      bus_fwd = PSA_MAIN_BUS;
       break;
     }
     default: {
