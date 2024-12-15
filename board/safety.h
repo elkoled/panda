@@ -385,7 +385,7 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
     {SAFETY_TESLA, &tesla_hooks},
     {SAFETY_SUBARU_PREGLOBAL, &subaru_preglobal_hooks},
     {SAFETY_VOLKSWAGEN_PQ, &volkswagen_pq_hooks},
-    {SAFETY_PSA, &alloutput_hooks}, # TODO remove
+    {SAFETY_PSA, &alloutput_hooks}, // TODO remove
     {SAFETY_ALLOUTPUT, &alloutput_hooks},
 #endif
   };
