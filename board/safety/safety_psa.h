@@ -53,6 +53,11 @@ static void psa_rx_hook(const CANPacket_t *to_push) {
       // Signal: P013_MainBrake
       brake_pressed = GET_BIT(to_push, 5);
     }
+    // Update gas pedal
+    if (addr == PSA_DRIVER) {
+      // Signal: GAS_PEDAL
+      gas_pressed = GET_BYTE(to_push, 3) > 0U;
+    }
 
     bool stock_ecu_detected = psa_lkas_msg_check(addr);
     generic_rx_checks(stock_ecu_detected);
@@ -66,13 +71,6 @@ static void psa_rx_hook(const CANPacket_t *to_push) {
       vehicle_moving = speed > 0;
       UPDATE_VEHICLE_SPEED(speed * 0.01);
     }
-
-    // Update gas pedal
-    if (addr == PSA_DRIVER) {
-      // Signal: GAS_PEDAL
-      gas_pressed = GET_BYTE(to_push, 3) > 0U;
-    }
-
     // Update cruise state
     if (addr == PSA_HS2_DAT_MDD_CMD_452) {
       // Signal: DDE_ACTIVATION_RVV_ACC
@@ -129,12 +127,6 @@ static int psa_fwd_hook(int bus_num, int addr) {
     }
   }
   return bus_fwd;
-}
-
-static bool psa_tx_hook(const CANPacket_t *to_send) {
-  print("psa_tx_hook\n");
-  UNUSED(to_send);
-  return true;
 }
 
 static safety_config psa_init(uint16_t param) {
