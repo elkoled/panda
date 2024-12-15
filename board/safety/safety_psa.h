@@ -22,7 +22,7 @@ RxCheck psa_rx_checks[] = {
   {.msg = {{PSA_DRIVER, PSA_CAM_BUS, 6, .frequency = 10U}, { 0 }, { 0 }}},
   {.msg = {{PSA_DAT_BSI, PSA_CAM_BUS, 8, .frequency = 20U}, { 0 }, { 0 }}},
   {.msg = {{PSA_HS2_DYN_ABR_38D, PSA_ADAS_BUS, 8, .frequency = 25U}, { 0 }, { 0 }}},
-  //{.msg = {{PSA_HS2_BGE_DYN5_CMM_228, PSA_ADAS_BUS, 8, .frequency = 100U}, { 0 }, { 0 }}},
+  //{.msg = {{PSA_HS2_BGE_DYN5_CMM_228, PSA_ADAS_BUS, 8, .frequency = 100U}, { 0 }, { 0 }}}, //TODO: not in route
   {.msg = {{PSA_HS2_DAT_MDD_CMD_452, PSA_ADAS_BUS, 6, .frequency = 20U}, { 0 }, { 0 }}},
 };
 
@@ -81,55 +81,55 @@ static void psa_rx_hook(const CANPacket_t *to_push) {
   }
 }
 
-// static bool psa_tx_hook(const CANPacket_t *to_send) {
-//   bool tx = true;
-//   int addr = GET_ADDR(to_send);
+static bool psa_tx_hook(const CANPacket_t *to_send) {
+  bool tx = true;
+  int addr = GET_ADDR(to_send);
 
-//   // TODO: Safety check for cruise buttons
-//   // TODO: check resume is not pressed when controls not allowed
-//   // TODO: check cancel is not pressed when cruise isn't engaged
+  // TODO: Safety check for cruise buttons
+  // TODO: check resume is not pressed when controls not allowed
+  // TODO: check cancel is not pressed when cruise isn't engaged
 
-//   // Safety check for LKA
-//   if (addr == PSA_LANE_KEEP_ASSIST) {
-//     // Signal: ANGLE
-//     int desired_angle = to_signed((GET_BYTE(to_send, 6) << 6) | ((GET_BYTE(to_send, 7) & 0xFCU) >> 2), 14);
-//     // Signal: STATUS
-//     bool lka_active = ((GET_BYTE(to_send, 4) & 0x18U) >> 3) == 2U;
+  // Safety check for LKA
+  if (addr == PSA_LANE_KEEP_ASSIST) {
+    // Signal: ANGLE
+    int desired_angle = to_signed((GET_BYTE(to_send, 6) << 6) | ((GET_BYTE(to_send, 7) & 0xFCU) >> 2), 14);
+    // Signal: STATUS
+    bool lka_active = ((GET_BYTE(to_send, 4) & 0x18U) >> 3) == 2U;
 
-//     if (steer_angle_cmd_checks(desired_angle, lka_active, PSA_STEERING_LIMITS)) {
-//       tx = false;
-//     }
-//   }
+    if (steer_angle_cmd_checks(desired_angle, lka_active, PSA_STEERING_LIMITS)) {
+      tx = false;
+    }
+  }
 
-//   return tx;
-// }
+  return tx;
+}
 
-// static int psa_fwd_hook(int bus_num, int addr) {
-//   int bus_fwd = -1;
-//   switch (bus_num) {
-//     case PSA_MAIN_BUS: {
-//       if (psa_lkas_msg_check(addr)) {
-//         // Block stock LKAS messages
-//         bus_fwd = -1;
-//       } else {
-//         // Forward all other traffic from MAIN to CAM
-//         bus_fwd = PSA_CAM_BUS;
-//       }
-//       break;
-//     }
-//     case PSA_CAM_BUS: {
-//       // Forward all traffic from CAM to MAIN
-//       bus_fwd = PSA_MAIN_BUS;
-//       break;
-//     }
-//     default: {
-//       // No other buses should be in use; fallback to block
-//       bus_fwd = -1;
-//       break;
-//     }
-//   }
-//   return bus_fwd;
-// }
+static int psa_fwd_hook(int bus_num, int addr) {
+  int bus_fwd = -1;
+  switch (bus_num) {
+    case PSA_MAIN_BUS: {
+      if (psa_lkas_msg_check(addr)) {
+        // Block stock LKAS messages
+        bus_fwd = -1;
+      } else {
+        // Forward all other traffic from MAIN to CAM
+        bus_fwd = PSA_CAM_BUS;
+      }
+      break;
+    }
+    case PSA_CAM_BUS: {
+      // Forward all traffic from CAM to MAIN
+      bus_fwd = PSA_MAIN_BUS;
+      break;
+    }
+    default: {
+      // No other buses should be in use; fallback to block
+      bus_fwd = -1;
+      break;
+    }
+  }
+  return bus_fwd;
+}
 
 static bool psa_tx_hook(const CANPacket_t *to_send) {
   print("psa_tx_hook\n");
@@ -137,19 +137,6 @@ static bool psa_tx_hook(const CANPacket_t *to_send) {
   return true;
 }
 
-static int psa_fwd_hook(int bus_num, int addr) {
-  int bus_fwd = -1;
-  UNUSED(addr);
-  print("psa_fwd_hook\n");
-  if (bus_num == 0) {
-    bus_fwd = 2;
-  }
-  if (bus_num == 2) {
-    bus_fwd = 0;
-  }
-
-  return bus_fwd;
-}
 static safety_config psa_init(uint16_t param) {
   UNUSED(param);
   print("psa_init\n");
