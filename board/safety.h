@@ -54,7 +54,7 @@
 #define SAFETY_FAW 26U
 #define SAFETY_BODY 27U
 #define SAFETY_HYUNDAI_CANFD 28U
-#define SAFETY_PSA 31U
+#define SAFETY_PSA 17U //TODO: remove
 
 uint32_t GET_BYTES(const CANPacket_t *msg, int start, int len) {
   uint32_t ret = 0U;
@@ -385,7 +385,7 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
     {SAFETY_TESLA, &tesla_hooks},
     {SAFETY_SUBARU_PREGLOBAL, &subaru_preglobal_hooks},
     {SAFETY_VOLKSWAGEN_PQ, &volkswagen_pq_hooks},
-    {SAFETY_PSA, &alloutput_hooks}, // TODO remove
+    {SAFETY_PSA, &psa_hooks},
     {SAFETY_ALLOUTPUT, &alloutput_hooks},
 #endif
   };
