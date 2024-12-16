@@ -19,8 +19,8 @@ const CanMsg PSA_TX_MSGS[] = {
 
 RxCheck psa_rx_checks[] = {
   // TODO: counters and checksums
-  {.msg = {{PSA_DRIVER, PSA_CAM_BUS, 6, .frequency = 10U}, { 0 }, { 0 }}},
-  {.msg = {{PSA_DAT_BSI, PSA_CAM_BUS, 8, .frequency = 20U}, { 0 }, { 0 }}},
+  {.msg = {{PSA_DRIVER, PSA_MAIN_BUS, 6, .frequency = 10U}, { 0 }, { 0 }}},
+  {.msg = {{PSA_DAT_BSI, PSA_MAIN_BUS, 8, .frequency = 20U}, { 0 }, { 0 }}},
   {.msg = {{PSA_HS2_DYN_ABR_38D, PSA_ADAS_BUS, 8, .frequency = 25U}, { 0 }, { 0 }}},
   //{.msg = {{PSA_HS2_BGE_DYN5_CMM_228, PSA_ADAS_BUS, 8, .frequency = 100U}, { 0 }, { 0 }}}, //TODO: not in route
   {.msg = {{PSA_HS2_DAT_MDD_CMD_452, PSA_ADAS_BUS, 6, .frequency = 20U}, { 0 }, { 0 }}},
