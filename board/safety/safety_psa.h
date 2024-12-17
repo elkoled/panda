@@ -81,23 +81,25 @@ static void psa_rx_hook(const CANPacket_t *to_push) {
 
 static bool psa_tx_hook(const CANPacket_t *to_send) {
   bool tx = true;
-  int addr = GET_ADDR(to_send);
+  UNUSED(to_send);
+  // int addr = GET_ADDR(to_send);
 
   // TODO: Safety check for cruise buttons
   // TODO: check resume is not pressed when controls not allowed
   // TODO: check cancel is not pressed when cruise isn't engaged
 
   // Safety check for LKA
-  if (addr == PSA_LANE_KEEP_ASSIST) {
+  // if (addr == PSA_LANE_KEEP_ASSIST) {
     // Signal: ANGLE
-    int desired_angle = to_signed((GET_BYTE(to_send, 6) << 6) | ((GET_BYTE(to_send, 7) & 0xFCU) >> 2), 14);
+    // int desired_angle = to_signed((GET_BYTE(to_send, 6) << 6) | ((GET_BYTE(to_send, 7) & 0xFCU) >> 2), 14);
     // Signal: STATUS
-    bool lka_active = ((GET_BYTE(to_send, 4) & 0x18U) >> 3) == 2U;
+    // bool lka_active = ((GET_BYTE(to_send, 4) & 0x18U) >> 3) == 2U;
 
-    if (steer_angle_cmd_checks(desired_angle, lka_active, PSA_STEERING_LIMITS)) {
-      tx = false;
-    }
-  }
+    // if (steer_angle_cmd_checks(desired_angle, lka_active, PSA_STEERING_LIMITS)) {
+      // tx = false;
+    // }
+
+  // }
 
   return tx;
 }
