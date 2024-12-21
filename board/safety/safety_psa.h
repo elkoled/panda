@@ -31,14 +31,13 @@ static bool psa_lkas_msg_check(int addr) {
 }
 
 // TODO: update rate limits, copied from toyota
-// TODO: multiplied by 100 to avoid checks failed
 const SteeringLimits PSA_STEERING_LIMITS = {
-    .max_steer = 10000,
-    .max_rate_up = 1500,          // ramp up slow
-    .max_rate_down = 2500,        // ramp down fast
-    .max_torque_error = 10000,    // max torque cmd in excess of motor torque
-    .max_rt_delta = 45000,        // the real time limit is 1800/sec, a 20% buffer
-    .max_rt_interval = 25000000,
+    .max_steer = 100,
+    .max_rate_up = 10,          // ramp up slow
+    .max_rate_down = 20,        // ramp down fast
+    .max_torque_error = 100,    // max torque cmd in excess of motor torque
+    .max_rt_delta = 450,        // the real time limit is 1800/sec, a 20% buffer
+    .max_rt_interval = 250000,
     .type = TorqueMotorLimited,
 
     // the EPS faults when the steering angle rate is above a certain threshold for too long. to prevent this,
@@ -47,6 +46,7 @@ const SteeringLimits PSA_STEERING_LIMITS = {
     // .max_invalid_request_frames = 1,
     // .min_valid_request_rt_interval = 170000,  // 170ms; a ~10% buffer on cutting every 19 frames
     // .has_steer_req_tolerance = true,
+
 
     // LTA angle limits
     // factor for STEER_TORQUE_SENSOR->STEER_ANGLE and STEERING_LTA->STEER_ANGLE_CMD (1 / 0.0573)
