@@ -14,7 +14,7 @@
 #define PSA_CAM_BUS  2U
 
 const CanMsg PSA_TX_MSGS[] = {
-  {PSA_LANE_KEEP_ASSIST, 0, 8},
+  {PSA_LANE_KEEP_ASSIST, PSA_CAM_BUS, 8},
 };
 
 RxCheck psa_rx_checks[] = {
