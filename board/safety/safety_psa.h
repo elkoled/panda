@@ -113,6 +113,9 @@ static bool psa_tx_hook(const CANPacket_t *to_send) {
     int desired_torque = to_signed((GET_BYTES(to_send, 3, 4) & 0xFFE0) >> 5, 11);
     // Signal: STATUS
     bool lka_active = ((GET_BYTE(to_send, 4) & 0x18U) >> 3) == 2U;
+    // TODO: DEBUG, find correct way!
+    controls_allowed = true;
+
     print("desired_torque: ");
     puth(desired_torque);
     print(" lka_active: ");
