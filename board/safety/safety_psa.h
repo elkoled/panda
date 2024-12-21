@@ -147,7 +147,7 @@ static bool psa_tx_hook(const CANPacket_t *to_send) {
   //   if (steer_torque_cmd_checks(desired_torque, lka_active, PSA_STEERING_LIMITS)) {
   //      tx = false;
   //   }
-  }
+  // }
 
   return tx;
 }
