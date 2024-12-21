@@ -99,54 +99,54 @@ static void psa_rx_hook(const CANPacket_t *to_push) {
 
 static bool psa_tx_hook(const CANPacket_t *to_send) {
   bool tx = true;
-  // UNUSED(to_send);
+  UNUSED(to_send);
   // TODO: enable tx safeety checks
-  int addr = GET_ADDR(to_send);
+  // int addr = GET_ADDR(to_send);
 
   // TODO: Safety check for cruise buttons
   // TODO: check resume is not pressed when controls not allowed
   // TODO: check cancel is not pressed when cruise isn't engaged
 
-  // Safety check for LKA
-  if (addr == PSA_LANE_KEEP_ASSIST) {
-    // Signal: TORQUE
-    int desired_torque = to_signed((GET_BYTES(to_send, 3, 4) & 0xFFE0) >> 5, 11);
-    // Signal: STATUS
-    bool lka_active = ((GET_BYTE(to_send, 4) & 0x18U) >> 3) == 2U;
-    print("desired_torque: ");
-    puth(desired_torque);
-    print(" lka_active: ");
-    puth(lka_active);
-    print("\n\n");
+  // // Safety check for LKA
+  // if (addr == PSA_LANE_KEEP_ASSIST) {
+  //   // Signal: TORQUE
+  //   int desired_torque = to_signed((GET_BYTES(to_send, 3, 4) & 0xFFE0) >> 5, 11);
+  //   // Signal: STATUS
+  //   bool lka_active = ((GET_BYTE(to_send, 4) & 0x18U) >> 3) == 2U;
+  //   print("desired_torque: ");
+  //   puth(desired_torque);
+  //   print(" lka_active: ");
+  //   puth(lka_active);
+  //   print("\n\n");
 
-    print("Saved LKA Message:");
-      print("\nFD: ");
-      puth(to_send->fd);
-      print("\nBus: ");
-      puth(to_send->bus);
-      print("\nData Length Code: ");
-      puth(to_send->data_len_code);
-      print("\nRejected: ");
-      puth(to_send->rejected);
-      print("\nReturned: ");
-      puth(to_send->returned);
-      print("\nExtended: ");
-      puth(to_send->extended);
-      print("\nAddress: ");
-      puth(to_send->addr);
-      print("\nChecksum: ");
-      puth(to_send->checksum);
-      for (int i = 0; i < to_send->data_len_code; i++) {
-        print("Data[");
-        puth(i);
-        print("]: ");
-        puth(to_send->data[i]);
-      }
-      print("\n");
+  //   print("Saved LKA Message:");
+  //     print("\nFD: ");
+  //     puth(to_send->fd);
+  //     print("\nBus: ");
+  //     puth(to_send->bus);
+  //     print("\nData Length Code: ");
+  //     puth(to_send->data_len_code);
+  //     print("\nRejected: ");
+  //     puth(to_send->rejected);
+  //     print("\nReturned: ");
+  //     puth(to_send->returned);
+  //     print("\nExtended: ");
+  //     puth(to_send->extended);
+  //     print("\nAddress: ");
+  //     puth(to_send->addr);
+  //     print("\nChecksum: ");
+  //     puth(to_send->checksum);
+  //     for (int i = 0; i < to_send->data_len_code; i++) {
+  //       print("Data[");
+  //       puth(i);
+  //       print("]: ");
+  //       puth(to_send->data[i]);
+  //     }
+  //     print("\n");
 
-    if (steer_torque_cmd_checks(desired_torque, lka_active, PSA_STEERING_LIMITS)) {
-       tx = false;
-    }
+  //   if (steer_torque_cmd_checks(desired_torque, lka_active, PSA_STEERING_LIMITS)) {
+  //      tx = false;
+  //   }
   }
 
   return tx;
