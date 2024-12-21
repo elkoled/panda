@@ -121,28 +121,28 @@ static bool psa_tx_hook(const CANPacket_t *to_send) {
 
     print("Saved LKA Message:");
       print("\nFD: ");
-      puth(to_send.fd);
+      puth(to_send->fd);
       print("\nBus: ");
-      puth(to_send.bus);
+      puth(to_send->bus);
       print("\nData Length Code: ");
-      puth(to_send.data_len_code);
+      puth(to_send->data_len_code);
       print("\nRejected: ");
-      puth(to_send.rejected);
+      puth(to_send->rejected);
       print("\nReturned: ");
-      puth(to_send.returned);
+      puth(to_send->returned);
       print("\nExtended: ");
-      puth(to_send.extended);
+      puth(to_send->extended);
       print("\nAddress: ");
-      puth(to_send.addr);
+      puth(to_send->addr);
       print("\nChecksum: ");
-      puth(to_send.checksum);
-      for (int i = 0; i < to_send.data_len_code; i++) {
+      puth(to_send->checksum);
+      for (int i = 0; i < to_send->data_len_code; i++) {
         print("Data[");
         puth(i);
         print("]: ");
-        puth(to_send.data[i]);
+        puth(to_send->data[i]);
       }
-      print("\n")
+      print("\n");
 
     if (steer_torque_cmd_checks(desired_torque, lka_active, PSA_STEERING_LIMITS)) {
        tx = false;
