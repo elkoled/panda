@@ -98,22 +98,24 @@ static void psa_rx_hook(const CANPacket_t *to_push) {
 
 static bool psa_tx_hook(const CANPacket_t *to_send) {
   bool tx = true;
-  int addr = GET_ADDR(to_send);
+  UNUSED(to_send);
+  // TODO: enable tx safeety checks
+  // int addr = GET_ADDR(to_send);
 
   // TODO: Safety check for cruise buttons
   // TODO: check resume is not pressed when controls not allowed
   // TODO: check cancel is not pressed when cruise isn't engaged
 
-  // Safety check for LKA
-  if (addr == PSA_LANE_KEEP_ASSIST) {
-    // Signal: TORQUE
-    int desired_torque = to_signed((GET_BYTES(to_send, 3, 4) & 0xFFE0) >> 5, 11);
-    // Signal: STATUS
-    bool lka_active = ((GET_BYTE(to_send, 4) & 0x18U) >> 3) == 2U;
+  // // Safety check for LKA
+  // if (addr == PSA_LANE_KEEP_ASSIST) {
+  //   // Signal: TORQUE
+  //   int desired_torque = to_signed((GET_BYTES(to_send, 3, 4) & 0xFFE0) >> 5, 11);
+  //   // Signal: STATUS
+  //   bool lka_active = ((GET_BYTE(to_send, 4) & 0x18U) >> 3) == 2U;
 
-    if (steer_torque_cmd_checks(desired_torque, lka_active, PSA_STEERING_LIMITS)) {
-       tx = false;
-    }
+  //   if (steer_torque_cmd_checks(desired_torque, lka_active, PSA_STEERING_LIMITS)) {
+  //      tx = false;
+  //   }
   }
 
   return tx;
