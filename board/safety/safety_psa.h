@@ -1,15 +1,9 @@
-void can_send(CANPacket_t *to_push, uint8_t bus_number, bool skip_tx_hook);
-
-CANPacket_t can_sync = (CANPacket_t){0};
-
 // Safety-relevant CAN messages for PSA vehicles.
 #define PSA_DRIVER               1390
 #define PSA_DAT_BSI              1042
 #define PSA_LANE_KEEP_ASSIST     1010
 // Messages on the ADAS bus.
 #define PSA_HS2_DYN_ABR_38D      909
-// # TODO message not in route
-//#define PSA_HS2_BGE_DYN5_CMM_228 552
 #define PSA_HS2_DAT_MDD_CMD_452  1106
 
 // CAN bus numbers.
@@ -26,7 +20,6 @@ RxCheck psa_rx_checks[] = {
   {.msg = {{PSA_DRIVER, PSA_MAIN_BUS, 6, .frequency = 10U}, { 0 }, { 0 }}},
   {.msg = {{PSA_DAT_BSI, PSA_MAIN_BUS, 8, .frequency = 20U}, { 0 }, { 0 }}},
   {.msg = {{PSA_HS2_DYN_ABR_38D, PSA_ADAS_BUS, 8, .frequency = 25U}, { 0 }, { 0 }}},
-  //{.msg = {{PSA_HS2_BGE_DYN5_CMM_228, PSA_ADAS_BUS, 8, .frequency = 100U}, { 0 }, { 0 }}}, //TODO: not in route
   {.msg = {{PSA_HS2_DAT_MDD_CMD_452, PSA_ADAS_BUS, 6, .frequency = 20U}, { 0 }, { 0 }}},
 };
 
@@ -34,26 +27,8 @@ static bool psa_lkas_msg_check(int addr) {
   return addr == PSA_LANE_KEEP_ASSIST;
 }
 
-// TODO: update rate limits, copied from toyota
+// TODO: update rate limits
 const SteeringLimits PSA_STEERING_LIMITS = {
-    .max_steer = 100,
-    .max_rate_up = 10,          // ramp up slow
-    .max_rate_down = 20,        // ramp down fast
-    .max_torque_error = 100,    // max torque cmd in excess of motor torque
-    .max_rt_delta = 450,        // the real time limit is 1800/sec, a 20% buffer
-    .max_rt_interval = 250000,
-    .type = TorqueMotorLimited,
-
-    // the EPS faults when the steering angle rate is above a certain threshold for too long. to prevent this,
-    // we allow setting STEER_REQUEST bit to 0 while maintaining the requested torque value for a single frame
-    // .min_valid_request_frames = 18,
-    // .max_invalid_request_frames = 1,
-    // .min_valid_request_rt_interval = 170000,  // 170ms; a ~10% buffer on cutting every 19 frames
-    // .has_steer_req_tolerance = true,
-
-
-    // LTA angle limits
-    // factor for STEER_TORQUE_SENSOR->STEER_ANGLE and STEERING_LTA->STEER_ANGLE_CMD (1 / 0.0573)
     .angle_deg_to_can = 10,
     .angle_rate_up_lookup = {
     {0., 5., 15.},
@@ -68,13 +43,6 @@ const SteeringLimits PSA_STEERING_LIMITS = {
 static void psa_rx_hook(const CANPacket_t *to_push) {
   int bus = GET_BUS(to_push);
   int addr = GET_ADDR(to_push);
-
-  // if (bus == PSA_MAIN_BUS) {
-  //   if (addr == PSA_LANE_KEEP_ASSIST)
-  //   {
-  //     can_send(&can_sync, PSA_CAM_BUS, true);
-  //   }
-  // }
 
   if (bus == PSA_CAM_BUS) {
     // Update brake pedal
@@ -109,15 +77,10 @@ static void psa_rx_hook(const CANPacket_t *to_push) {
 }
 
 static bool psa_tx_hook(const CANPacket_t *to_send) {
-  //TODO: set to true
   bool tx = true;
   UNUSED(to_send);
   // int addr = GET_ADDR(to_send);
-  // if (addr == PSA_LANE_KEEP_ASSIST)
-  // {
-  //   can_sync = *to_send;
-  // }
-  // TODO: enable tx safeety checks
+  // // TODO: enable tx safeety checks
   // int addr = GET_ADDR(to_send);
 
   // TODO: Safety check for cruise buttons
