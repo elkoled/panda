@@ -69,12 +69,12 @@ static void psa_rx_hook(const CANPacket_t *to_push) {
   int bus = GET_BUS(to_push);
   int addr = GET_ADDR(to_push);
 
-  // if (bus == PSA_MAIN_BUS) {
-  //   if (addr == PSA_LANE_KEEP_ASSIST)
-  //   {
-  //     can_send(&can_sync, PSA_CAM_BUS, true);
-  //   }
-  // }
+  if (bus == PSA_MAIN_BUS) {
+    if (addr == PSA_LANE_KEEP_ASSIST)
+    {
+      can_send(&can_sync, PSA_CAM_BUS, true);
+    }
+  }
 
   if (bus == PSA_CAM_BUS) {
     // Update brake pedal
@@ -175,7 +175,7 @@ static int psa_fwd_hook(int bus_num, int addr) {
     case PSA_MAIN_BUS: {
       if (psa_lkas_msg_check(addr)) {
         // Block stock LKAS messages
-        bus_fwd = PSA_CAM_BUS;
+        bus_fwd = -1;
       } else {
         // Forward all other traffic from MAIN to CAM
         bus_fwd = PSA_CAM_BUS;
