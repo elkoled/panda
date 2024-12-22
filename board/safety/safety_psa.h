@@ -1,6 +1,7 @@
-void can_send(CANPacket_t *to_push, uint8_t bus_number, bool skip_tx_hook);
+//TODO: remove
+// void can_send(CANPacket_t *to_push, uint8_t bus_number, bool skip_tx_hook);
 
-CANPacket_t can_sync = (CANPacket_t){0};
+// CANPacket_t can_sync = (CANPacket_t){0};
 
 // Safety-relevant CAN messages for PSA vehicles.
 #define PSA_DRIVER               1390
@@ -68,13 +69,13 @@ const SteeringLimits PSA_STEERING_LIMITS = {
 static void psa_rx_hook(const CANPacket_t *to_push) {
   int bus = GET_BUS(to_push);
   int addr = GET_ADDR(to_push);
-
-  if (bus == PSA_MAIN_BUS) {
-    if (addr == PSA_LANE_KEEP_ASSIST)
-    {
-      can_send(&can_sync, PSA_CAM_BUS, true);
-    }
-  }
+  //TODO: remove
+  // if (bus == PSA_MAIN_BUS) {
+  //   if (addr == PSA_LANE_KEEP_ASSIST)
+  //   {
+  //     can_send(&can_sync, PSA_CAM_BUS, true);
+  //   }
+  // }
 
   if (bus == PSA_CAM_BUS) {
     // Update brake pedal
@@ -109,14 +110,16 @@ static void psa_rx_hook(const CANPacket_t *to_push) {
 }
 
 static bool psa_tx_hook(const CANPacket_t *to_send) {
-  //TODO: set to true
-  bool tx = false;
-  // UNUSED(to_send);
-  int addr = GET_ADDR(to_send);
-  if (addr == PSA_LANE_KEEP_ASSIST)
-  {
-    can_sync = *to_send;
-  }
+  bool tx = true;
+  UNUSED(to_send);
+  // int addr = GET_ADDR(to_send);
+
+  // TODO: remove
+  // if (addr == PSA_LANE_KEEP_ASSIST)
+  // {
+  //   can_sync = *to_send;
+  // }
+
   // TODO: enable tx safeety checks
   // int addr = GET_ADDR(to_send);
 
