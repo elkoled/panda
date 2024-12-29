@@ -1,13 +1,10 @@
-// Safety-relevant CAN messages for PSA vehicles.
-#define PSA_DRIVER               1390 // RX from BSI, Gas pedal
-#define PSA_DAT_BSI              1042 // RX from BSI, Doors
-#define PSA_LANE_KEEP_ASSIST     1010 // TX from OP, LKAS EPS
+#define PSA_DRIVER               1390 // RX from BSI, gas pedal
+#define PSA_DAT_BSI              1042 // RX from BSI, doors
+#define PSA_HS2_DYN_ABR_38D      909  // RX from CAN1, UC_FREIN, speed
+#define PSA_HS2_DAT_MDD_CMD_452  1106 // RX from CAN1, BSI, cruise state
+#define PSA_LANE_KEEP_ASSIST     1010 // TX from OP, EPS
 
-// Messages on the ADAS bus.
-#define PSA_HS2_DYN_ABR_38D      909  // RX from CAN1, Speed
-#define PSA_HS2_DAT_MDD_CMD_452  1106 // RX from CAN1, Cruise state
-
-// CAN bus numbers.
+// CAN bus numbers
 #define PSA_MAIN_BUS 0U
 #define PSA_ADAS_BUS 1U
 #define PSA_CAM_BUS  2U
