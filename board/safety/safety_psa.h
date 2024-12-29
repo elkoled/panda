@@ -1,11 +1,11 @@
 // Safety-relevant CAN messages for PSA vehicles.
-#define PSA_DRIVER               1390
-#define PSA_DAT_BSI              1042
-#define PSA_LANE_KEEP_ASSIST     1010
+#define PSA_DRIVER               1390 // RX from BSI, Gas pedal
+#define PSA_DAT_BSI              1042 // RX from BSI, Doors
+#define PSA_LANE_KEEP_ASSIST     1010 // TX from OP, LKAS EPS
 
 // Messages on the ADAS bus.
-#define PSA_HS2_DYN_ABR_38D      909
-#define PSA_HS2_DAT_MDD_CMD_452  1106
+#define PSA_HS2_DYN_ABR_38D      909  // RX from CAN1, Speed
+#define PSA_HS2_DAT_MDD_CMD_452  1106 // RX from CAN1, Cruise state
 
 // CAN bus numbers.
 #define PSA_MAIN_BUS 0U
@@ -18,8 +18,8 @@ const CanMsg PSA_TX_MSGS[] = {
 
 RxCheck psa_rx_checks[] = {
   // TODO: counters and checksums
-  {.msg = {{PSA_DRIVER, PSA_MAIN_BUS, 6, .frequency = 10U}, { 0 }, { 0 }}},
-  {.msg = {{PSA_DAT_BSI, PSA_MAIN_BUS, 8, .frequency = 20U}, { 0 }, { 0 }}},
+  {.msg = {{PSA_DRIVER, PSA_MAIN_BUS, 6, .frequency = 10U}, { 0 }, { 0 }}}, // no counter
+  {.msg = {{PSA_DAT_BSI, PSA_MAIN_BUS, 8, .frequency = 20U}, { 0 }, { 0 }}}, // no counter
   {.msg = {{PSA_HS2_DYN_ABR_38D, PSA_ADAS_BUS, 8, .frequency = 25U}, { 0 }, { 0 }}},
   {.msg = {{PSA_HS2_DAT_MDD_CMD_452, PSA_ADAS_BUS, 6, .frequency = 20U}, { 0 }, { 0 }}},
 };
