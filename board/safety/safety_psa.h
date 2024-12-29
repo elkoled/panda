@@ -39,40 +39,30 @@ const SteeringLimits PSA_STEERING_LIMITS = {
     {0., 5., 15.},
     {10., 7.0, .8},
   },
-  };
+};
 
 static void psa_rx_hook(const CANPacket_t *to_push) {
   int bus = GET_BUS(to_push);
   int addr = GET_ADDR(to_push);
 
   if (bus == PSA_CAM_BUS) {
-    // Update brake pedal
     if (addr == PSA_DAT_BSI) {
-      // Signal: P013_MainBrake
-      brake_pressed = GET_BIT(to_push, 5);
+      brake_pressed = GET_BIT(to_push, 5); // P013_MainBrake
     }
-    // Update gas pedal
     if (addr == PSA_DRIVER) {
-      // Signal: GAS_PEDAL
-      gas_pressed = GET_BYTE(to_push, 3) > 0U;
+      gas_pressed = GET_BYTE(to_push, 3) > 0U; // GAS_PEDAL
     }
-
     bool stock_ecu_detected = psa_lkas_msg_check(addr);
     generic_rx_checks(stock_ecu_detected);
   }
-
   if (bus == PSA_ADAS_BUS) {
-    // Update vehicle speed and in motion state
     if (addr == PSA_HS2_DYN_ABR_38D) {
-      // Signal: VITESSE_VEHICULE_ROUES
       int speed = (GET_BYTE(to_push, 0) << 8) | GET_BYTE(to_push, 1);
       vehicle_moving = speed > 0;
-      UPDATE_VEHICLE_SPEED(speed * 0.01);
+      UPDATE_VEHICLE_SPEED(speed * 0.01); // VITESSE_VEHICULE_ROUES
     }
-    // Update cruise state
     if (addr == PSA_HS2_DAT_MDD_CMD_452) {
-      // Signal: DDE_ACTIVATION_RVV_ACC
-      pcm_cruise_check(GET_BIT(to_push, 23));
+      pcm_cruise_check(GET_BIT(to_push, 23)); // DDE_ACTIVATION_RVV_ACC
     }
   }
 }
