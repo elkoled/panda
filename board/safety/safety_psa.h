@@ -108,31 +108,16 @@ static bool psa_tx_hook(const CANPacket_t *to_send) {
 }
 
 static int psa_fwd_hook(int bus_num, int addr) {
-  int bus_fwd = -1;
-  switch (bus_num) {
-    case PSA_MAIN_BUS: {
-      if (psa_lkas_msg_check(addr)) {
-        // Block stock LKAS messages
-        bus_fwd = -1;
-      } else {
-        // Forward all other traffic from MAIN to CAM
-        bus_fwd = PSA_CAM_BUS;
-      }
-      break;
-    }
-    case PSA_CAM_BUS: {
-      // Forward all traffic from CAM to MAIN
-      bus_fwd = PSA_MAIN_BUS;
-      break;
-    }
-    default: {
-      // No other buses should be in use; fallback to block
-      bus_fwd = -1;
-      break;
-    }
+  if (bus_num == PSA_MAIN_BUS) {
+    return psa_lkas_msg_check(addr) ? -1 : PSA_CAM_BUS;
   }
-  return bus_fwd;
+  if (bus_num == PSA_CAM_BUS) {
+    return PSA_MAIN_BUS;
+  }
+  // Fallback for unsupported buses
+  return -1;
 }
+
 
 static safety_config psa_init(uint16_t param) {
   UNUSED(param);
