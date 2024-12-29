@@ -90,7 +90,14 @@ static bool psa_tx_hook(const CANPacket_t *to_send) {
     // Signal: ANGLE
     int desired_angle = to_signed((GET_BYTE(to_send, 6) << 6) | ((GET_BYTE(to_send, 7) & 0xFCU) >> 2), 14);
     // Signal: STATUS
-    bool lka_active = ((GET_BYTE(to_send, 4) & 0x18U) >> 3) == 2U;
+    bool lka_active = ((GET_BYTE(to_send, 4) & 0x1CU) >> 2) == 4U;
+    print("desired_angle: ");
+    puth(desired_angle);
+    print(" | lka_active: ");
+    puth(lka_active);
+    print(" | angle_check: ");
+    puth(steer_angle_cmd_checks(desired_angle, lka_active, PSA_STEERING_LIMITS));
+    print("\n");
 
     if (steer_angle_cmd_checks(desired_angle, lka_active, PSA_STEERING_LIMITS)) {
       // TODO: uncomment when STEERING_LIMITS are aligned
@@ -138,4 +145,6 @@ const safety_hooks psa_hooks = {
   .rx = psa_rx_hook,
   .tx = psa_tx_hook,
   .fwd = psa_fwd_hook,
+  // .get_counter = psa_get_counter,
+  // .get_checksums = psa_get_checksum,
 };
