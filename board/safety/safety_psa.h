@@ -95,14 +95,17 @@ static bool psa_tx_hook(const CANPacket_t *to_send) {
 }
 
 static int psa_fwd_hook(int bus_num, int addr) {
-  if (bus_num == PSA_MAIN_BUS) {
-    return psa_lkas_msg_check(addr) ? -1 : PSA_CAM_BUS;
-  }
-  if (bus_num == PSA_CAM_BUS) {
-    return PSA_MAIN_BUS;
-  }
-  // Fallback for unsupported buses
-  return -1;
+    if (bus_num == PSA_MAIN_BUS) {
+        if (psa_lkas_msg_check(addr)) {
+            return -1;
+        }
+        return PSA_CAM_BUS;
+    }
+    if (bus_num == PSA_CAM_BUS) {
+        return PSA_MAIN_BUS;
+    }
+    // Fallback for unsupported buses
+    return -1;
 }
 
 
