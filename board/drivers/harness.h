@@ -40,10 +40,12 @@ bool harness_check_ignition(void) {
 
   switch(harness.status){
     case HARNESS_STATUS_NORMAL:
-      ret = !get_gpio_input(current_board->harness_config->GPIO_SBU1, current_board->harness_config->pin_SBU1);
+      // TODO: Ignition for PSA is active low
+      ret = get_gpio_input(current_board->harness_config->GPIO_SBU1, current_board->harness_config->pin_SBU1);
       break;
     case HARNESS_STATUS_FLIPPED:
-      ret = !get_gpio_input(current_board->harness_config->GPIO_SBU2, current_board->harness_config->pin_SBU2);
+      // TODO: Ignition for PSA is active low
+      ret = get_gpio_input(current_board->harness_config->GPIO_SBU2, current_board->harness_config->pin_SBU2);
       break;
     default:
       break;
