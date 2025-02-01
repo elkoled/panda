@@ -17,8 +17,8 @@ RxCheck psa_rx_checks[] = {
   // TODO: counters and checksums
   {.msg = {{PSA_DRIVER, PSA_MAIN_BUS, 6, .frequency = 10U}, { 0 }, { 0 }}}, // no counter
   {.msg = {{PSA_DAT_BSI, PSA_MAIN_BUS, 8, .frequency = 20U}, { 0 }, { 0 }}}, // no counter
-  {.msg = {{PSA_HS2_DYN_ABR_38D, PSA_ADAS_BUS, 8, .frequency = 25U}, { 0 }, { 0 }}},
-  {.msg = {{PSA_HS2_DAT_MDD_CMD_452, PSA_ADAS_BUS, 6, .frequency = 20U}, { 0 }, { 0 }}},
+  {.msg = {{PSA_HS2_DYN_ABR_38D, PSA_MAIN_BUS, 8, .frequency = 25U}, { 0 }, { 0 }}},
+  // {.msg = {{PSA_HS2_DAT_MDD_CMD_452, PSA_ADAS_BUS, 6, .frequency = 20U}, { 0 }, { 0 }}},
 };
 
 static bool psa_lkas_msg_check(int addr) {
@@ -52,16 +52,16 @@ static void psa_rx_hook(const CANPacket_t *to_push) {
     bool stock_ecu_detected = psa_lkas_msg_check(addr);
     generic_rx_checks(stock_ecu_detected);
   }
-  if (bus == PSA_ADAS_BUS) {
-    if (addr == PSA_HS2_DYN_ABR_38D) {
-      int speed = (GET_BYTE(to_push, 0) << 8) | GET_BYTE(to_push, 1);
-      vehicle_moving = speed > 0;
-      UPDATE_VEHICLE_SPEED(speed * 0.01); // VITESSE_VEHICULE_ROUES
-    }
-    if (addr == PSA_HS2_DAT_MDD_CMD_452) {
-      pcm_cruise_check(GET_BIT(to_push, 23)); // DDE_ACTIVATION_RVV_ACC
-    }
-  }
+  // if (bus == PSA_ADAS_BUS) {
+  //   if (addr == PSA_HS2_DYN_ABR_38D) {
+  //     int speed = (GET_BYTE(to_push, 0) << 8) | GET_BYTE(to_push, 1);
+  //     vehicle_moving = speed > 0;
+  //     UPDATE_VEHICLE_SPEED(speed * 0.01); // VITESSE_VEHICULE_ROUES
+  //   }
+  //   if (addr == PSA_HS2_DAT_MDD_CMD_452) {
+  //     pcm_cruise_check(GET_BIT(to_push, 23)); // DDE_ACTIVATION_RVV_ACC
+  //   }
+  // }
 }
 
 static bool psa_tx_hook(const CANPacket_t *to_send) {
@@ -95,10 +95,11 @@ static bool psa_tx_hook(const CANPacket_t *to_send) {
 }
 
 static int psa_fwd_hook(int bus_num, int addr) {
+  UNUSED(addr); // TODO remove
     if (bus_num == PSA_MAIN_BUS) {
-        if (psa_lkas_msg_check(addr)) {
-            return -1;
-        }
+        // if (psa_lkas_msg_check(addr)) {
+        //     return -1;
+        // }
         return PSA_CAM_BUS;
     }
     if (bus_num == PSA_CAM_BUS) {
