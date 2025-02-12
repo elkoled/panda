@@ -188,7 +188,7 @@ void ignition_can_hook(CANPacket_t *to_push) {
 
     // PSA exception
     if ((addr == 0x348) && (len == 8)) {
-      ignition_can = GET_BIT(to_push, 41) & GET_BIT(to_push, 54);
+      ignition_can = GET_BIT(to_push, 41);
       ignition_can_cnt = 0U;
     }
   }
