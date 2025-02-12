@@ -2,7 +2,7 @@
 import random
 import unittest
 
-from opendbc.car.hyundai.values import HyundaiPandaFlags
+from opendbc.car.hyundai.values import HyundaiSafetyFlags
 from panda import Panda
 from panda.tests.libpanda import libpanda_py
 import panda.tests.safety.common as common
@@ -150,7 +150,7 @@ class TestHyundaiSafetyAltLimits(TestHyundaiSafety):
   def setUp(self):
     self.packer = CANPackerPanda("hyundai_kia_generic")
     self.safety = libpanda_py.libpanda
-    self.safety.set_safety_hooks(Panda.SAFETY_HYUNDAI, HyundaiPandaFlags.FLAG_HYUNDAI_ALT_LIMITS)
+    self.safety.set_safety_hooks(Panda.SAFETY_HYUNDAI, HyundaiSafetyFlags.FLAG_HYUNDAI_ALT_LIMITS)
     self.safety.init_tests()
 
 
@@ -161,7 +161,7 @@ class TestHyundaiSafetyCameraSCC(TestHyundaiSafety):
   def setUp(self):
     self.packer = CANPackerPanda("hyundai_kia_generic")
     self.safety = libpanda_py.libpanda
-    self.safety.set_safety_hooks(Panda.SAFETY_HYUNDAI, HyundaiPandaFlags.FLAG_HYUNDAI_CAMERA_SCC)
+    self.safety.set_safety_hooks(Panda.SAFETY_HYUNDAI, HyundaiSafetyFlags.FLAG_HYUNDAI_CAMERA_SCC)
     self.safety.init_tests()
 
   def test_pcm_main_cruise_state_availability(self):
@@ -218,7 +218,7 @@ class TestHyundaiLongitudinalSafety(HyundaiLongitudinalBase, TestHyundaiSafety):
   def setUp(self):
     self.packer = CANPackerPanda("hyundai_kia_generic")
     self.safety = libpanda_py.libpanda
-    self.safety.set_safety_hooks(Panda.SAFETY_HYUNDAI, HyundaiPandaFlags.FLAG_HYUNDAI_LONG)
+    self.safety.set_safety_hooks(Panda.SAFETY_HYUNDAI, HyundaiSafetyFlags.FLAG_HYUNDAI_LONG)
     self.safety.init_tests()
 
   def _accel_msg(self, accel, aeb_req=False, aeb_decel=0):
