@@ -5,9 +5,9 @@
 #define PSA_LANE_KEEP_ASSIST     1010 // TX from OP, EPS
 
 // CAN bus numbers
-#define PSA_MAIN_BUS 0U
+#define PSA_MAIN_BUS 2U
 #define PSA_ADAS_BUS 1U
-#define PSA_CAM_BUS  2U
+#define PSA_CAM_BUS  0U
 
 const CanMsg PSA_TX_MSGS[] = {
   {PSA_LANE_KEEP_ASSIST, PSA_CAM_BUS, 8},
