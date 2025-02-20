@@ -124,10 +124,6 @@ int get_current_safety_param(void){
   return current_safety_param;
 }
 
-int get_hw_type(void){
-  return hw_type;
-}
-
 void set_timer(uint32_t t){
   timer.CNT = t;
 }
@@ -259,10 +255,6 @@ void set_heartbeat_engaged_mads(bool c){
 //}
 
 void init_tests(void){
-  // get HW_TYPE from env variable set in test.sh
-  if (getenv("HW_TYPE")) {
-    hw_type = atoi(getenv("HW_TYPE"));
-  }
   safety_mode_cnt = 2U;  // avoid ignoring relay_malfunction logic
   alternative_experience = 0;
   set_timer(0);

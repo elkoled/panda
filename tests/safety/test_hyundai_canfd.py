@@ -4,7 +4,7 @@ import unittest
 
 from opendbc.car.hyundai.values import HyundaiSafetyFlags
 from opendbc.safety import Safety
-from panda.tests.libpanda import libpanda_py
+from panda.tests.libsafety import libsafety_py
 import panda.tests.safety.common as common
 from panda.tests.safety.common import CANPackerPanda
 from panda.tests.safety.hyundai_common import HyundaiButtonBase, HyundaiLongitudinalBase
@@ -113,7 +113,7 @@ class TestHyundaiCanfdHDA1Base(TestHyundaiCanfdBase):
 
   def setUp(self):
     self.packer = CANPackerPanda("hyundai_canfd")
-    self.safety = libpanda_py.libpanda
+    self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(Safety.SAFETY_HYUNDAI_CANFD, self.SAFETY_PARAM)
     self.safety.init_tests()
 
@@ -156,7 +156,7 @@ class TestHyundaiCanfdHDA1AltButtons(TestHyundaiCanfdHDA1Base):
 
   def setUp(self):
     self.packer = CANPackerPanda("hyundai_canfd")
-    self.safety = libpanda_py.libpanda
+    self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(Safety.SAFETY_HYUNDAI_CANFD, HyundaiSafetyFlags.FLAG_HYUNDAI_CANFD_ALT_BUTTONS | self.SAFETY_PARAM)
     self.safety.init_tests()
 
@@ -195,7 +195,7 @@ class TestHyundaiCanfdHDA2EV(TestHyundaiCanfdBase):
 
   def setUp(self):
     self.packer = CANPackerPanda("hyundai_canfd")
-    self.safety = libpanda_py.libpanda
+    self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(Safety.SAFETY_HYUNDAI_CANFD, HyundaiSafetyFlags.FLAG_HYUNDAI_CANFD_HDA2 | HyundaiSafetyFlags.FLAG_HYUNDAI_EV_GAS)
     self.safety.init_tests()
 
@@ -215,7 +215,7 @@ class TestHyundaiCanfdHDA2EVAltSteering(TestHyundaiCanfdBase):
 
   def setUp(self):
     self.packer = CANPackerPanda("hyundai_canfd")
-    self.safety = libpanda_py.libpanda
+    self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(Safety.SAFETY_HYUNDAI_CANFD, HyundaiSafetyFlags.FLAG_HYUNDAI_CANFD_HDA2 | HyundaiSafetyFlags.FLAG_HYUNDAI_EV_GAS |
                                  HyundaiSafetyFlags.FLAG_HYUNDAI_CANFD_HDA2_ALT_STEERING)
     self.safety.init_tests()
@@ -237,7 +237,7 @@ class TestHyundaiCanfdHDA2LongEV(HyundaiLongitudinalBase, TestHyundaiCanfdHDA2EV
 
   def setUp(self):
     self.packer = CANPackerPanda("hyundai_canfd")
-    self.safety = libpanda_py.libpanda
+    self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(Safety.SAFETY_HYUNDAI_CANFD, HyundaiSafetyFlags.FLAG_HYUNDAI_CANFD_HDA2 |
                                  HyundaiSafetyFlags.FLAG_HYUNDAI_LONG | HyundaiSafetyFlags.FLAG_HYUNDAI_EV_GAS)
     self.safety.init_tests()
@@ -282,7 +282,7 @@ class TestHyundaiCanfdHDA1Long(HyundaiLongitudinalBase, TestHyundaiCanfdHDA1Base
 
   def setUp(self):
     self.packer = CANPackerPanda("hyundai_canfd")
-    self.safety = libpanda_py.libpanda
+    self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(Safety.SAFETY_HYUNDAI_CANFD, HyundaiSafetyFlags.FLAG_HYUNDAI_CAMERA_SCC | self.SAFETY_PARAM)
     self.safety.init_tests()
 

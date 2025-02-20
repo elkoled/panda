@@ -21,7 +21,7 @@ DEBUG_VARS = {
 
 # replay a drive to check for safety violations
 def replay_drive(lr, safety_mode, param, alternative_experience, segment=False):
-  safety = libpanda_py.libpanda
+  safety = libsafety_py.libsafety
 
   err = safety.set_safety_hooks(safety_mode, param)
   assert err == 0, "invalid safety mode: %d" % safety_mode
