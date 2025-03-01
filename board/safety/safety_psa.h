@@ -26,6 +26,7 @@ static bool psa_lkas_msg_check(int addr) {
 }
 
 // TODO: update rate limits
+// Currently set to ISO11270 limits
 const SteeringLimits PSA_STEERING_LIMITS = {
     .angle_deg_to_can = 10,
     .angle_rate_up_lookup = {
@@ -34,7 +35,7 @@ const SteeringLimits PSA_STEERING_LIMITS = {
   },
   .angle_rate_down_lookup = {
     {0., 5., 15.},
-    {5., 2.0, .3},
+    {5., 2.0, 0.3},
   },
 };
 
@@ -76,19 +77,16 @@ static bool psa_tx_hook(const CANPacket_t *to_send) {
   if (addr == PSA_LANE_KEEP_ASSIST) {
     // Signal: ANGLE
     int desired_angle = to_signed((GET_BYTE(to_send, 6) << 6) | ((GET_BYTE(to_send, 7) & 0xFCU) >> 2), 14);
-    // Signal: STATUS
-    bool lka_active = ((GET_BYTE(to_send, 4) & 0x1CU) >> 2) == 4U;
+    // Signal: TORQUE_FACTOR
+    bool lka_active = ((GET_BYTE(to_send, 5) & 0xFEU) >> 1) == 100U;
     print("desired_angle: ");
     puth(desired_angle);
     print(" | lka_active: ");
     puth(lka_active);
-    print(" | angle_check: ");
-    puth(steer_angle_cmd_checks(desired_angle, lka_active, PSA_STEERING_LIMITS));
     print("\n");
 
     if (steer_angle_cmd_checks(desired_angle, lka_active, PSA_STEERING_LIMITS)) {
-      // TODO: uncomment when STEERING_LIMITS are aligned
-      // tx = false;
+      tx = false;
     }
   }
   return tx;
