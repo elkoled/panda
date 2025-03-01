@@ -30,11 +30,11 @@ const SteeringLimits PSA_STEERING_LIMITS = {
     .angle_deg_to_can = 10,
     .angle_rate_up_lookup = {
     {0., 5., 15.},
-    {10., 1.6, .30},
+    {2.5, 1.5, 0.2},
   },
   .angle_rate_down_lookup = {
     {0., 5., 15.},
-    {10., 7.0, .8},
+    {5., 2.0, .3},
   },
 };
 
