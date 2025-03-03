@@ -28,7 +28,7 @@ static bool psa_lkas_msg_check(int addr) {
 // TODO: update rate limits
 // Currently set to ISO11270 limits
 const SteeringLimits PSA_STEERING_LIMITS = {
-    .angle_deg_to_can = 10,
+    .angle_deg_to_can = 100,
     .angle_rate_up_lookup = {
     {0., 5., 15.},
     {2.5, 1.5, 0.2},
