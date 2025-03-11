@@ -1,164 +1,168 @@
 #!/usr/bin/env python3
 import argparse
 from tqdm import tqdm
+
 from opendbc.car.carlog import carlog
-from opendbc.car.uds import UdsClient, MessageTimeoutError, NegativeResponseError, InvalidSubAddressError, \
-                            SESSION_TYPE, DATA_IDENTIFIER_TYPE
-from opendbc.car.structs import CarParams
+from opendbc.car.uds import UdsClient, MessageTimeoutError, NegativeResponseError, \
+                            InvalidSubAddressError, SESSION_TYPE, DATA_IDENTIFIER_TYPE
 from panda import Panda
 
-# Build a mapping of standard UDS identifiers
-uds_data_ids = {}
-for std_id in DATA_IDENTIFIER_TYPE:
-  uds_data_ids[std_id.value] = std_id.name
-
-def add_nonstandard_ids(nonstandard_flag):
-  """If --nonstandard flag is set, add extra ranges for manufacturer‐specific DIDs."""
-  if nonstandard_flag:
-    for uds_id in range(0xf100, 0xf180):
-      uds_data_ids[uds_id] = "IDENTIFICATION_OPTION_VEHICLE_MANUFACTURER_SPECIFIC_DATA_IDENTIFIER"
-    for uds_id in range(0xf1a0, 0xf1f0):
-      uds_data_ids[uds_id] = "IDENTIFICATION_OPTION_VEHICLE_MANUFACTURER_SPECIFIC"
-    for uds_id in range(0xf1f0, 0xf200):
-      uds_data_ids[uds_id] = "IDENTIFICATION_OPTION_SYSTEM_SUPPLIER_SPECIFIC"
-
-def query_raw_info(uds_client):
-  """
-  Query extra manufacturer-specific commands using raw UDS messages.
-  This function sends a sequence of commands that in the PSA adapter were:
-    - 10C0 : Diagnostic session control (to switch to a specific session)
-    - 2180 : Read additional firmware info
-    - 17FF00 : Request extended ECU details
-  It assumes the UdsClient has an internal method _do_cmd that sends a raw command (in bytes) and returns the response.
-  """
-  raw_cmds = {
-      "10C0": "Diagnostic session control to manufacturer-specific session",
-      "2180": "Read manufacturer-specific firmware info",
-      "17FF00": "Request extended ECU details"
-  }
-  responses = {}
-  for cmd, desc in raw_cmds.items():
-    try:
-      # Convert the hex string to bytes and send as a raw command.
-      # (This uses the internal _do_cmd method; if unavailable, implement a similar raw send.)
-      response = uds_client._do_cmd(bytes.fromhex(cmd))
-      responses[cmd] = response
-    except Exception as e:
-      responses[cmd] = f"Error: {str(e)}"
-  return responses
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser()
-  parser.add_argument("--rxoffset", default="")
-  parser.add_argument("--nonstandard", action="store_true", help="Include non-standard UDS IDs")
-  parser.add_argument("--no-obd", action="store_true", help="Bus 1 will not be multiplexed to the OBD-II port")
-  parser.add_argument("--no-29bit", action="store_true", help="29 bit addresses will not be queried")
+  parser = argparse.ArgumentParser(description="Enhanced script for scanning PSA ECUs over UDS.")
+  parser.add_argument("--nonstandard", action="store_true",
+                      help="Include manufacturer-specific data ID ranges 0xF100..0xF1FF.")
+  parser.add_argument("--no-obd", action="store_true",
+                      help="If set, bus 1 will NOT be multiplexed to the OBD-II port (safety_mode).")
+  parser.add_argument("--no-29bit", action="store_true", help="Skip scanning 29-bit (extended) addresses.")
   parser.add_argument("--debug", action="store_true")
-  parser.add_argument("--addr")
-  parser.add_argument("--sub_addr", "--subaddr", help="A hex sub-address or `scan` to scan the full sub-address range")
-  parser.add_argument("--bus")
-  parser.add_argument("--raw", action="store_true", help="Also query manufacturer-specific raw commands")
-  parser.add_argument('-s', '--serial', help="Serial number of panda to use")
+  parser.add_argument("--addr", help="Scan only this specific address (hex).")
+  parser.add_argument("--sub_addr", "--subaddr",
+                      help="A hex sub-address or the word 'scan' to brute-force 0x0..0xFF subaddrs.")
+  parser.add_argument("--bus", help="Which bus to use (default tries 0,1).")
+  parser.add_argument("--serial", help="Specific panda serial to connect to.")
+  parser.add_argument("--rxoffset", default="",
+                      help="Offset (decimal or hex) to compute the response address = request+offset. "
+                           "E.g. --rxoffset -20 or --rxoffset -0x14 for typical PSA offset.")
   args = parser.parse_args()
 
   if args.debug:
     carlog.setLevel('DEBUG')
 
-  add_nonstandard_ids(args.nonstandard)
-
-  if args.addr:
-    addrs = [int(args.addr, base=16)]
-  else:
-    addrs = [0x700 + i for i in range(256)]
-    if not args.no_29bit:
-      addrs += [0x18da0000 + (i << 8) + 0xf1 for i in range(256)]
-  results = {}
-
-  # Setup sub-addresses
-  sub_addrs: list[int | None] = [None]
+  # --- Parse subaddresses ----------------------------------------------------
+  sub_addrs = [None]
   if args.sub_addr:
     if args.sub_addr == "scan":
-      sub_addrs = list(range(0xff + 1))
+      sub_addrs = list(range(0x100))  # 0..0xFF
     else:
-      sub_addrs = [int(args.sub_addr, base=16)]
-      if sub_addrs[0] > 0xff:  # type: ignore
-        print(f"Invalid sub-address: 0x{sub_addrs[0]:X}, needs to be in range 0x0 to 0xff")
-        parser.print_help()
-        exit()
+      # parse e.g. '0x12' or '18' from command-line
+      sa_val = int(args.sub_addr, 0)
+      if not (0 <= sa_val <= 0xFF):
+        print(f"ERROR: sub-address out of range: {hex(sa_val)}")
+        exit(1)
+      sub_addrs = [sa_val]
 
-  panda_serials = Panda.list()
-  if args.serial is None and len(panda_serials) > 1:
-    print("\nMultiple pandas found, choose one:")
-    for serial in panda_serials:
-      with Panda(serial) as panda:
-        print(f"  {serial}: internal={panda.is_internal()}")
-    print()
-    parser.print_help()
-    exit()
+  # --- Parse rx offset (allow decimal or hex, signed) ------------------------
+  rx_offset = None
+  if args.rxoffset:
+    rx_offset = int(args.rxoffset, 0)  # int(..., 0) parses "10", "-20", "0x14", "-0x14", etc.
 
+  # --- Build list of addresses to try ----------------------------------------
+  # If user gave --addr, just do that. Otherwise scan typical 0x600..0x7FF
+  # plus optional 29-bit. Adjust as needed for your platform
+  if args.addr:
+    addrs = [int(args.addr, 0)]
+  else:
+    addrs = list(range(0x600, 0x800))  # 0x600..0x7FF is often used by PSA modules
+    if not args.no_29bit:
+      # Typical extended IDs: 0x18daXXXX (some cars respond here).
+      # In practice, you might want 0x18da6000..0x18da7FFF or so
+      for i in range(0x600, 0x700):
+        extended = 0x18DA0000 + (i << 8) + 0xF1
+        addrs.append(extended)
+
+  # --- Gather data IDs to read: standard + optional manufacturer ranges ------
+  uds_data_ids = {}
+  for std_id in DATA_IDENTIFIER_TYPE:
+    uds_data_ids[std_id.value] = std_id.name
+  # “--nonstandard” means also try typical OEM-specific IDs in 0xF1xx
+  if args.nonstandard:
+    for uds_id in range(0xF100, 0xF180):
+      uds_data_ids[uds_id] = "PSA_OEM_SPECIFIC_1"
+    for uds_id in range(0xF1A0, 0xF200):
+      uds_data_ids[uds_id] = "PSA_OEM_SPECIFIC_2"
+
+  # --- Connect to panda and set ELM safety mode (ISO-TP echo) ----------------
   panda = Panda(serial=args.serial)
-  panda.set_safety_mode(CarParams.SafetyModel.elm327, 1 if args.no_obd else 0)
-  print("querying addresses ...")
+  # If you have a newer PSA with the OBD port on bus 0, you might want bus=0 in set_safety_mode.
+  # But openpilot’s “ELM327” mode typically sets bus=1 to multiplex OBD on bus1. Adjust as needed.
+  panda.set_safety_mode(Panda.SAFETY_ELM327, 1 if not args.no_obd else 0)
 
+  # Decide which bus lines to try
+  # If user gave --bus, just do that. Otherwise, try bus=0 and bus=1 (typical)
+  if args.bus is not None:
+    bus_list = [int(args.bus)]
+  else:
+    bus_list = [0, 1]
+
+  results = {}
+
+  print("Scanning addresses ...")
   with tqdm(addrs) as t:
     for addr in t:
-      # skip functional broadcast addresses
-      if addr == 0x7df or addr == 0x18db33f1:
-        continue
-
-      bus = int(args.bus) if args.bus else (1 if panda.has_obd() else 0)
-      rx_addr = addr + int(args.rxoffset, base=16) if args.rxoffset else None
-
       for sub_addr in sub_addrs:
-        sub_addr_str = hex(sub_addr) if sub_addr is not None else None
-        t.set_description(f"{hex(addr)}, {sub_addr_str}")
-        uds_client = UdsClient(panda, addr, rx_addr, bus, sub_addr=sub_addr, timeout=0.2)
+        t.set_description(f"0x{addr:X}, sub=0x{sub_addr:X}" if sub_addr is not None else f"0x{addr:X}")
 
-        # Establish a session on the ECU:
-        try:
-          uds_client.tester_present()
-          uds_client.diagnostic_session_control(SESSION_TYPE.DEFAULT)
-          uds_client.diagnostic_session_control(SESSION_TYPE.EXTENDED_DIAGNOSTIC)
-        except NegativeResponseError:
-          pass
-        except MessageTimeoutError:
-          continue
-        except InvalidSubAddressError as e:
-          print(f'*** Skipping address {hex(addr)}: {e}')
-          break
+        for bus in bus_list:
+          rx_addr = None
+          if rx_offset is not None:
+            rx_addr = addr + rx_offset
 
-        # Query standard UDS data identifiers
-        std_resp = {}
-        for uds_data_id in sorted(uds_data_ids):
+          # Create UdsClient
+          uds_client = UdsClient(panda, req_id=addr, rx_addr=rx_addr, bus=bus,
+                                 sub_addr=sub_addr, timeout=0.2)
+
+          # Step 1: ping with TesterPresent
           try:
-            data = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE(uds_data_id))
-            if data:
-              std_resp[uds_data_id] = data
-          except (NegativeResponseError, MessageTimeoutError, InvalidSubAddressError):
+            uds_client.tester_present()
+          except MessageTimeoutError:
+            # not responding on this address
+            continue
+          except InvalidSubAddressError:
+            # sub-addr invalid
+            break
+          except NegativeResponseError:
             pass
 
-        # If requested, query extra (raw) manufacturer-specific commands
-        raw_resp = {}
-        if args.raw:
-          raw_resp = query_raw_info(uds_client)
+          # Step 2: attempt all known session types:
+          # Some PSA ECUs only give full info in Programming or SafetySystem session
+          session_types = [
+            SESSION_TYPE.DEFAULT,
+            SESSION_TYPE.EXTENDED_DIAGNOSTIC,
+            SESSION_TYPE.PROGRAMMING,
+            SESSION_TYPE.SAFETY_SYSTEM_DIAGNOSTIC,
+          ]
+          saw_any_response = False
+          for st in session_types:
+            try:
+              uds_client.diagnostic_session_control(st)
+              saw_any_response = True
+            except NegativeResponseError:
+              # ECU doesn’t allow that session
+              pass
+            except MessageTimeoutError:
+              # no reply
+              pass
+            except InvalidSubAddressError:
+              # no sense to keep going
+              saw_any_response = False
+              break
 
-        results[(addr, sub_addr)] = {"standard": std_resp, "raw": raw_resp}
+          if not saw_any_response:
+            # No valid session found
+            continue
 
-  # Print out the results:
-  if results:
-    for (addr, sub_addr), resp in results.items():
-      sub_addr_str = f", sub-address 0x{sub_addr:X}" if sub_addr is not None else ""
-      print(f"\n\n*** Results for address 0x{addr:X}{sub_addr_str} ***\n")
-      if resp["standard"]:
-        print("Standard UDS responses:")
-        for rid, dat in resp["standard"].items():
-          name = uds_data_ids.get(rid, f"0x{rid:02X}")
-          print(f"  0x{rid:02X} {name}: {dat}")
-      else:
-        print("No standard UDS responses.")
-      if args.raw:
-        print("\nRaw (manufacturer-specific) responses:")
-        for cmd, dat in resp["raw"].items():
-          print(f"  Command {cmd}: {dat}")
+          # Step 3: read all data IDs
+          resp_data = {}
+          for data_id in sorted(uds_data_ids):
+            try:
+              data = uds_client.read_data_by_identifier(data_id)
+              if data:
+                resp_data[data_id] = data
+            except (NegativeResponseError, MessageTimeoutError, InvalidSubAddressError):
+              pass
+
+          if len(resp_data):
+            results[(addr, sub_addr, bus)] = resp_data
+
+  # --- Print out results -----------------------------------------------------
+  if len(results):
+    for (addr, sub_addr, bus), resp in results.items():
+      sub_str = f", sub=0x{sub_addr:X}" if sub_addr is not None else ""
+      print(f"\n\n*** Results @addr=0x{addr:X}{sub_str}, bus={bus} ***\n")
+      for rid, dat in resp.items():
+        # If we had a label for this data_id
+        label = uds_data_ids.get(rid, f"0x{rid:X}")
+        print(f"  0x{rid:04X} {label}: {dat}")
   else:
-    print("no fw versions found!")
+    print("No firmware responses found!")
