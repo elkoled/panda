@@ -202,7 +202,7 @@ void ignition_can_hook(CANPacket_t *msg) {
     }
 
     // PSA exception
-    if ((addr == 0x348) && (len == 8)) {
+    if ((msg->addr == 0x348) && (len == 8)) {
       // bit 41: EV running, bit 42: ICE running
       ignition_can = ((msg->data[5] >> 1) & 0x1U) || ((msg->data[5] >> 2) & 0x1U);
       ignition_can_cnt = 0U;
