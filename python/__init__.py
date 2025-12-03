@@ -23,7 +23,7 @@ __version__ = '0.0.10'
 CANPACKET_HEAD_SIZE = 0x6
 DLC_TO_LEN = [0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64]
 LEN_TO_DLC = {length: dlc for (dlc, length) in enumerate(DLC_TO_LEN)}
-PANDA_BUS_CNT = 3
+PANDA_CAN_CNT = 3
 
 
 def calculate_checksum(data):
@@ -124,6 +124,7 @@ class Panda:
   HEALTH_STRUCT = struct.Struct("<IIIIIIIIBBBBBHBBBHfBBHHHB")
   CAN_HEALTH_STRUCT = struct.Struct("<BIBBBBBBBBIIIIIIIHHBBBIIII")
 
+  F4_DEVICES = [HW_TYPE_WHITE, HW_TYPE_BLACK]
   H7_DEVICES = [HW_TYPE_RED_PANDA, HW_TYPE_TRES, HW_TYPE_CUATRO]
   SUPPORTED_DEVICES = H7_DEVICES
 
@@ -131,7 +132,7 @@ class Panda:
 
   MAX_FAN_RPMs = {
     HW_TYPE_TRES: 6600,
-    HW_TYPE_CUATRO: 12500,
+    HW_TYPE_CUATRO: 5000,
   }
 
   HARNESS_STATUS_NC = 0
@@ -196,9 +197,9 @@ class Panda:
     self._handle = None
     while self._handle is None:
       # try USB first, then SPI
-      self._context, self._handle, serial, self.bootstub, bcd = self.usb_connect(self._connect_serial, claim=claim, no_error=wait)
+      self._context, self._handle, serial, self.bootstub = self.usb_connect(self._connect_serial, claim=claim, no_error=wait)
       if self._handle is None:
-        self._context, self._handle, serial, self.bootstub, bcd = self.spi_connect(self._connect_serial)
+        self._context, self._handle, serial, self.bootstub = self.spi_connect(self._connect_serial)
       if not wait:
         break
 
@@ -225,11 +226,11 @@ class Panda:
     self.can_reset_communications()
 
     # disable automatic CAN-FD switching
-    for bus in range(PANDA_BUS_CNT):
+    for bus in range(PANDA_CAN_CNT):
       self.set_canfd_auto(bus, False)
 
     # set CAN speed
-    for bus in range(PANDA_BUS_CNT):
+    for bus in range(PANDA_CAN_CNT):
       self.set_can_speed_kbps(bus, self._can_speed_kbps)
 
   @property
@@ -238,49 +239,33 @@ class Panda:
 
   @classmethod
   def spi_connect(cls, serial, ignore_version=False):
-    # get UID to confirm slave is present and up
-    handle = None
-    spi_serial = None
-    bootstub = None
-    spi_version = None
     try:
       handle = PandaSpiHandle()
-
-      # connect by protcol version
-      try:
-        dat = handle.get_protocol_version()
-        spi_serial = binascii.hexlify(dat[:12]).decode()
-        pid = dat[13]
-        if pid not in (0xcc, 0xee):
-          raise PandaSpiException("invalid bootstub status")
-        bootstub = pid == 0xee
-        spi_version = dat[14]
-      except PandaSpiException:
-        # fallback, we'll raise a protocol mismatch below
-        dat = handle.controlRead(Panda.REQUEST_IN, 0xc3, 0, 0, 12, timeout=100)
-        spi_serial = binascii.hexlify(dat).decode()
-        bootstub = Panda.flasher_present(handle)
-        spi_version = 0
+      dat = handle.get_protocol_version()
     except PandaSpiException:
-      pass
+      return None, None, None, False
 
-    # no connection or wrong panda
-    if None in (spi_serial, bootstub) or (serial is not None and (spi_serial != serial)):
-      handle = None
-      spi_serial = None
-      bootstub = False
+    spi_serial = binascii.hexlify(dat[:12]).decode()
+    pid = dat[13]
+    if pid not in (0xcc, 0xee):
+      raise PandaProtocolMismatch(f"invalid bootstub status ({pid=}). reflash panda")
+    bootstub = pid == 0xee
+    spi_version = dat[14]
+
+    # did we get the right panda?
+    if serial is not None and spi_serial != serial:
+      return None, None, None, False
 
     # ensure our protocol version matches the panda
-    if handle is not None and not ignore_version:
-      if spi_version != handle.PROTOCOL_VERSION:
-        err = f"panda protocol mismatch: expected {handle.PROTOCOL_VERSION}, got {spi_version}. reflash panda"
-        raise PandaProtocolMismatch(err)
+    if (not ignore_version) and spi_version != handle.PROTOCOL_VERSION:
+      raise PandaProtocolMismatch(f"panda protocol mismatch: expected {handle.PROTOCOL_VERSION}, got {spi_version}. reflash panda")
 
-    return None, handle, spi_serial, bootstub, None
+    # got a device and all good
+    return None, handle, spi_serial, bootstub
 
   @classmethod
   def usb_connect(cls, serial, claim=True, no_error=False):
-    handle, usb_serial, bootstub, bcd = None, None, None, None
+    handle, usb_serial, bootstub = None, None, None
     context = usb1.USBContext()
     context.open()
     try:
@@ -306,11 +291,6 @@ class Panda:
               handle.claimInterface(0)
               # handle.setInterfaceAltSetting(0, 0)  # Issue in USB stack
 
-            # bcdDevice wasn't always set to the hw type, ignore if it's the old constant
-            this_bcd = device.getbcdDevice()
-            if this_bcd is not None and this_bcd != 0x2300:
-              bcd = bytearray([this_bcd >> 8, ])
-
             break
     except Exception:
       logger.exception("USB connect error")
@@ -321,7 +301,7 @@ class Panda:
     else:
       context.close()
 
-    return context, usb_handle, usb_serial, bootstub, bcd
+    return context, usb_handle, usb_serial, bootstub
 
   def is_connected_spi(self):
     return isinstance(self._handle, PandaSpiHandle)
@@ -357,7 +337,7 @@ class Panda:
 
   @classmethod
   def spi_list(cls):
-    _, _, serial, _, _ = cls.spi_connect(None, ignore_version=True)
+    _, _, serial, _ = cls.spi_connect(None, ignore_version=True)
     if serial is not None:
       return [serial, ]
     return []
@@ -631,7 +611,9 @@ class Panda:
 
   def get_mcu_type(self) -> McuType:
     hw_type = self.get_type()
-    if hw_type in Panda.H7_DEVICES:
+    if hw_type in Panda.F4_DEVICES:
+      return McuType.F4
+    elif hw_type in Panda.H7_DEVICES:
       return McuType.H7
     raise ValueError(f"unknown HW type: {hw_type}")
 
@@ -673,8 +655,8 @@ class Panda:
 
   # ******************* configuration *******************
 
-  def set_alternative_experience(self, alternative_experience):
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xdf, int(alternative_experience), 0, b'')
+  def set_alternative_experience(self, alternative_experience, safety_param_sp=0):
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xdf, int(alternative_experience), int(safety_param_sp), b'')
 
   def set_power_save(self, power_save_enabled=0):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xe7, int(power_save_enabled), 0, b'')
@@ -779,8 +761,8 @@ class Panda:
       ret += self._handle.bulkWrite(2, struct.pack("B", port_number) + ln[i:i + 0x20])
     return ret
 
-  def send_heartbeat(self, engaged=True):
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf3, engaged, 0, b'')
+  def send_heartbeat(self, engaged=True, engaged_mads=True):
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf3, engaged, engaged_mads, b'')
 
   # disable heartbeat checks for use outside of openpilot
   # sending a heartbeat will reenable the checks
