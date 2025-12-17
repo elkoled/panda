@@ -202,10 +202,16 @@ void ignition_can_hook(CANPacket_t *msg) {
     }
 
     // PSA exception
-    if ((msg->addr == 0x348U) && (len == 8)) {
-      // bit 41: EV running, bit 42: ICE running
-      ignition_can = (msg->data[5] & 0x6U) != 0U;
-      ignition_can_cnt = 0U;
+    if ((msg->addr == 0x208) && (len == 8)) {
+      int counter = msg->data[2] & 0xFU;
+
+      static int prev_counter_psa = -1;
+      if ((counter == ((prev_counter_psa + 1) % 16)) && (prev_counter_psa != -1)) {
+        // Dyn_CMM->P042_Inm_bCanMon
+        ignition_can = ((msg->data[4] >> 6) & 0x1U);
+        ignition_can_cnt = 0U;
+      }
+      prev_counter_psa = counter;
     }
 
   }
