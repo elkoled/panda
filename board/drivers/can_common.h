@@ -202,13 +202,13 @@ void ignition_can_hook(CANPacket_t *msg) {
     }
 
     // PSA exception
-    if ((msg->addr == 0x208) && (len == 8)) {
-      int counter = msg->data[2] & 0xFU;
+    if ((addr == 0x2f5) && (len == 7)) {
+      int counter = msg->data[0] & 0xFU;
 
       static int prev_counter_psa = -1;
       if ((counter == ((prev_counter_psa + 1) % 16)) && (prev_counter_psa != -1)) {
-        // Dyn_CMM->P042_Inm_bCanMon
-        ignition_can = ((msg->data[4] >> 6) & 0x1U);
+        // STEERING->IGNITION
+        ignition_can = ((msg->data[2] >> 5) & 0x1U);
         ignition_can_cnt = 0U;
       }
       prev_counter_psa = counter;
