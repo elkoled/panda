@@ -202,7 +202,7 @@ void ignition_can_hook(CANPacket_t *msg) {
     }
 
     // PSA exception
-    if ((addr == 0x2f5) && (len == 7)) {
+    if ((msg->addr == 0x2f5) && (len == 7)) {
       int counter = msg->data[0] & 0xFU;
 
       static int prev_counter_psa = -1;
