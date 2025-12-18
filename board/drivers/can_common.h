@@ -202,13 +202,13 @@ void ignition_can_hook(CANPacket_t *msg) {
     }
 
     // PSA exception
-    if ((msg->addr == 0x2f5) && (len == 7)) {
-      int counter = msg->data[0] & 0xFU;
+    if ((msg->addr == 0x432) && (len == 8)) {
+      int counter = msg->data[1] & 0xFU;
 
       static int prev_counter_psa = -1;
       if ((counter == ((prev_counter_psa + 1) % 16)) && (prev_counter_psa != -1)) {
-        // STEERING->IGNITION
-        ignition_can = ((msg->data[2] >> 5) & 0x1U);
+        // Dat_BSI1->P369_Com_stElecNetRaw
+        ignition_can = (msg->data[7] >> 4) == 0x5U;
         ignition_can_cnt = 0U;
       }
       prev_counter_psa = counter;
