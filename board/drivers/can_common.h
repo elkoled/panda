@@ -201,6 +201,9 @@ void ignition_can_hook(CANPacket_t *msg) {
       ignition_can_cnt = 0U;
     }
 
+  } else if(msg->bus == 2) {
+
+    int len = GET_LEN(msg);
     // PSA exception
     if ((msg->addr == 0x432) && (len == 8)) {
       int counter = msg->data[1] & 0xFU;
