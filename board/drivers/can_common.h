@@ -201,20 +201,11 @@ void ignition_can_hook(CANPacket_t *msg) {
       ignition_can_cnt = 0U;
     }
 
-  } else if(msg->bus == 2) {
-
-    int len = GET_LEN(msg);
     // PSA exception
-    if ((msg->addr == 0x432) && (len == 8)) {
-      int counter = msg->data[1] & 0xFU;
-
-      static int prev_counter_psa = -1;
-      if ((counter == ((prev_counter_psa + 1) % 16)) && (prev_counter_psa != -1)) {
-        // Dat_BSI1->P369_Com_stElecNetRaw
-        ignition_can = (msg->data[7] >> 4) == 0x5U;
-        ignition_can_cnt = 0U;
-      }
-      prev_counter_psa = counter;
+    if ((msg->addr == 0x348U) && (len == 8)) {
+      // bit 41: EV running, bit 42: ICE running
+      ignition_can = (msg->data[5] & 0x6U) != 0U;
+      ignition_can_cnt = 0U;
     }
 
   }
