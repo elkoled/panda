@@ -238,9 +238,10 @@ static void tick_handler(void) {
           // Also disable IR when the heartbeat goes missing
           current_board->set_ir_power(0U);
 
-          // Run fan when device is up but not talking to us.
-          // The bootloader enables the SOM GPIO on boot.
-          fan_set_power(current_board->read_som_gpio() ? 30U : 0U);
+          // Run fan when device is up but not talking to us
+          if (hw_type != HW_TYPE_CUATRO) {
+            fan_set_power(current_board->read_som_gpio() ? 30U : 0U);
+          }
         }
       }
 
