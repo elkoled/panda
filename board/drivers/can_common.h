@@ -203,8 +203,16 @@ void ignition_can_hook(CANPacket_t *msg) {
 
     // Volkswagen MEB exception
     if ((msg->addr == 0x3C0U) && (len == 4)) {
-      ignition_can = (msg->data[2] >> 1) & 1U;
-      ignition_can_cnt = 0U;
+      // 0x3C0 overlaps with BMW e8x/e9x Configuration_FAS which is 8 bytes; len check filters that.
+      int counter = msg->data[1] & 0xFU;  // Klemmen_Status_01.BZ, 4-bit
+
+      static int prev_counter_volkswagen_meb = -1;
+      if ((counter == ((prev_counter_volkswagen_meb + 1) % 16)) && (prev_counter_volkswagen_meb != -1)) {
+        // Klemmen_Status_01.ZAS_Kl_15 — terminal 15, set when ignition is on
+        ignition_can = (msg->data[2] >> 1) & 1U;
+        ignition_can_cnt = 0U;
+      }
+      prev_counter_volkswagen_meb = counter;
     }
   }
 
